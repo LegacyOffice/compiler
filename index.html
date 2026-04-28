@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Web-based Compiler Frontend with Lexical, Syntax, and Semantic Analysis">
     <title>Compiler Frontend - Lexer, Parser & Semantic Analyzer</title>
     <style>
         * {
@@ -16,6 +17,8 @@
             background: linear-gradient(135deg, #04AA6D 0%, #808b87 100%);
             min-height: 100vh;
             padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
@@ -152,6 +155,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .btn-primary {
@@ -185,6 +190,7 @@
             font-family: 'Courier New', monospace;
             font-size: 13px;
             resize: vertical;
+            -webkit-overflow-scrolling: touch;
         }
 
         .token {
@@ -362,11 +368,11 @@
             }
 
             .header h1 {
-                font-size: 1.8em;
+                font-size: 1.5em;
             }
 
             .header p {
-                font-size: 0.9em;
+                font-size: 0.85em;
             }
 
             .main-content {
@@ -377,50 +383,63 @@
 
             .section {
                 padding: 15px;
+                padding-top: 50px;
             }
 
             .section h2 {
-                font-size: 1.1em;
+                font-size: 1em;
                 flex-wrap: wrap;
+                margin-bottom: 10px;
             }
 
             .section-icon {
-                width: 24px;
-                height: 24px;
-                font-size: 12px;
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
             }
 
             .expand-btn {
-                position: static;
-                display: block;
-                width: 100%;
-                margin-bottom: 10px;
-                padding: 8px;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                left: auto;
+                width: auto;
+                padding: 6px 12px;
+                font-size: 11px;
             }
 
             textarea {
                 min-height: 150px;
                 font-size: 13px;
+                padding: 10px;
             }
 
             .button-group {
                 flex-direction: column;
+                gap: 8px;
             }
 
             button {
                 width: 100%;
-                padding: 10px;
+                padding: 12px;
+                font-size: 14px;
             }
 
             .output-box {
                 min-height: 150px;
                 max-height: 300px;
-                font-size: 12px;
+                font-size: 11px;
                 padding: 10px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .section.expanded {
+                padding-top: 50px;
             }
 
             .section.expanded .output-box {
-                max-height: 500px;
+                max-height: 600px;
             }
 
             .stats {
@@ -433,33 +452,119 @@
             }
 
             .stat-value {
-                font-size: 1.5em;
+                font-size: 1.3em;
             }
 
             .stat-label {
-                font-size: 0.8em;
+                font-size: 0.75em;
             }
 
             .token {
-                font-size: 11px;
-                padding: 3px 6px;
+                font-size: 10px;
+                padding: 3px 5px;
                 margin: 2px;
+                word-break: break-word;
             }
 
             .example-code {
-                font-size: 11px;
+                font-size: 10px;
                 padding: 8px;
             }
 
             .error, .success, .warning {
                 padding: 8px;
-                font-size: 13px;
+                font-size: 12px;
+                word-wrap: break-word;
+            }
+
+            .symbol-table {
+                font-size: 11px;
+                display: block;
+                overflow-x: auto;
             }
 
             .symbol-table th,
             .symbol-table td {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            .ast-node {
+                font-size: 11px;
+                padding: 3px 0;
+                padding-left: 8px;
+                word-wrap: break-word;
+            }
+
+            /* Improve touch targets */
+            button, .expand-btn {
+                min-height: 44px;
+            }
+
+            /* Better spacing for mobile */
+            .section h2 {
+                padding-right: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .header p {
+                font-size: 0.75em;
+            }
+
+            .main-content {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .section {
+                padding: 10px;
+                padding-top: 45px;
+            }
+
+            .section h2 {
+                font-size: 0.9em;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 5px;
+            }
+
+            .stat-card {
                 padding: 8px;
-                font-size: 12px;
+            }
+
+            .stat-value {
+                font-size: 1.1em;
+            }
+
+            .stat-label {
+                font-size: 0.7em;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .output-box {
+                font-size: 10px;
+                padding: 8px;
+            }
+
+            .token {
+                font-size: 9px;
+                padding: 2px 4px;
+                margin: 1px;
             }
         }
     </style>
