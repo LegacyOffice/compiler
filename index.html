@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -28,7 +28,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -63,7 +63,7 @@
         }
 
         .section h2 {
-            color: #667eea;
+            color: #1e3a8a;
             margin-bottom: 15px;
             font-size: 1.5em;
             display: flex;
@@ -74,7 +74,7 @@
         .section-icon {
             width: 30px;
             height: 30px;
-            background: #667eea;
+            background: #3b82f6;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -97,8 +97,8 @@
 
         textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .button-group {
@@ -118,13 +118,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
         }
 
         .btn-secondary {
@@ -157,12 +157,12 @@
             font-weight: 600;
         }
 
-        .token-keyword { background: #e3f2fd; color: #1976d2; }
-        .token-identifier { background: #f3e5f5; color: #7b1fa2; }
-        .token-number { background: #fff3e0; color: #e65100; }
-        .token-operator { background: #e8f5e9; color: #388e3c; }
-        .token-punctuation { background: #fce4ec; color: #c2185b; }
-        .token-string { background: #fff9c4; color: #f57f17; }
+        .token-keyword { background: #dbeafe; color: #1e3a8a; }
+        .token-identifier { background: #e5e7eb; color: #374151; }
+        .token-number { background: #bfdbfe; color: #1e40af; }
+        .token-operator { background: #93c5fd; color: #1e40af; }
+        .token-punctuation { background: #f3f4f6; color: #6b7280; }
+        .token-string { background: #dbeafe; color: #2563eb; }
 
         .error {
             background: #ffebee;
@@ -194,7 +194,7 @@
         .ast-node {
             margin-left: 20px;
             padding: 5px;
-            border-left: 2px solid #667eea;
+            border-left: 2px solid #3b82f6;
         }
 
         .symbol-table {
@@ -210,7 +210,7 @@
         }
 
         .symbol-table th {
-            background: #667eea;
+            background: #1e3a8a;
             color: white;
             font-weight: 600;
         }
@@ -247,7 +247,7 @@
         .stat-value {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: #1e3a8a;
         }
 
         .stat-label {
@@ -360,9 +360,19 @@ if (sum > 25) {
                 </h2>
                 <div class="output-box" id="errorsOutput"></div>
             </div>
+
+            <!-- Code Optimizations -->
+            <div class="section">
+                <h2>
+                    <span class="section-icon">⚡</span>
+                    Code Optimizations
+                </h2>
+                <div class="output-box" id="optimizationsOutput"></div>
+            </div>
         </div>
     </div>
 
     <script src="compiler.js"></script>
+    <script src="advanced-features.js"></script>
 </body>
 </html>

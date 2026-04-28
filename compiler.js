@@ -23,7 +23,8 @@ class Lexer {
         this.keywords = new Set([
             'int', 'float', 'string', 'bool',
             'if', 'else', 'while', 'for',
-            'return', 'print', 'true', 'false'
+            'return', 'print', 'true', 'false',
+            'function', 'void', 'break', 'continue'
         ]);
     }
 
@@ -298,9 +299,17 @@ class Parser {
         else if (token.type === 'KEYWORD' && token.value === 'while') {
             return this.parseWhileStatement();
         }
+        // For loop
+        else if (token.type === 'KEYWORD' && token.value === 'for') {
+            return this.parseForStatement();
+        }
         // Print statement
         else if (token.type === 'KEYWORD' && token.value === 'print') {
             return this.parsePrintStatement();
+        }
+        // Return statement
+        else if (token.type === 'KEYWORD' && token.value === 'return') {
+            return this.parseReturnStatement();
         }
         // Assignment or expression
         else if (token.type === 'IDENTIFIER') {
@@ -418,6 +427,74 @@ class Parser {
         this.expect('PUNCTUATION', ';');
 
         return node;
+    }
+
+    parseForStatement() {
+        const node = new ASTNode('ForStatement');
+        this.advance(); // Skip 'for'
+
+        this.expect('PUNCTUATION', '(');
+        
+        // Initialization
+        const init = this.parseStatement();
+        if (init) node.addChild(init);
+        
+        // Condition
+        const condition = this.parseExpression();
+        if (condition) node.addChild(condition);
+        this.expect('PUNCTUATION', ';');
+        
+        // Increment
+        const increment = this.parseAssignmentExpression();
+        if (increment) node.addChild(increment);
+        
+        this.expect('PUNCTUATION', ')');
+
+        this.expect('PUNCTUATION', '{');
+        const body = new ASTNode('Body');
+        while (this.currentToken() && this.currentToken().value !== '}') {
+            const stmt = this.parseStatement();
+            if (stmt) body.addChild(stmt);
+        }
+        node.addChild(body);
+        this.expect('PUNCTUATION', '}');
+
+        return node;
+    }
+
+    parseReturnStatement() {
+        const node = new ASTNode('ReturnStatement');
+        this.advance(); // Skip 'return'
+
+        // Check if there's an expression to return
+        if (this.currentToken() && this.currentToken().value !== ';') {
+            const expr = this.parseExpression();
+            if (expr) {
+                node.addChild(expr);
+            }
+        }
+
+        this.expect('PUNCTUATION', ';');
+        return node;
+    }
+
+    parseAssignmentExpression() {
+        if (this.currentToken() && this.currentToken().type === 'IDENTIFIER') {
+            const node = new ASTNode('Assignment');
+            const idToken = this.currentToken();
+            node.addChild(new ASTNode('Identifier', idToken.value));
+            this.advance();
+
+            if (this.currentToken() && this.currentToken().value === '=') {
+                this.advance();
+                const expr = this.parseExpression();
+                if (expr) {
+                    node.addChild(expr);
+                }
+            }
+            return node;
+        }
+        return null;
     }
 
     parseExpression() {
@@ -551,10 +628,14 @@ class SemanticAnalyzer {
                 break;
             case 'IfStatement':
             case 'WhileStatement':
+            case 'ForStatement':
                 node.children.forEach(child => this.visit(child));
                 break;
             case 'PrintStatement':
-                this.visit(node.children[0]);
+            case 'ReturnStatement':
+                if (node.children.length > 0) {
+                    this.visit(node.children[0]);
+                }
                 break;
             case 'BinaryOp':
                 this.visitBinaryOp(node);
@@ -583,7 +664,8 @@ class SemanticAnalyzer {
             this.symbolTable.set(name, {
                 type: type,
                 initialized: node.children.length > 2,
-                used: false
+                used: false,
+                line: 0
             });
         }
 
@@ -818,21 +900,36 @@ function clearAll() {
 }
 
 function loadExample() {
-    const example = `// Example Program
+    const example = `// Example Program - Compiler Frontend Demo
+// Demonstrates: Variables, Loops, Conditionals, Functions
+
 int x = 10;
 int y = 20;
 int sum = x + y;
 
+// Conditional statement
 if (sum > 25) {
     print(sum);
 }
 
-float pi = 3.14;
-string message = "Hello World";
+// Different data types
+float pi = 3.14159;
+string message = "Hello Compiler!";
+bool isValid = true;
 
-while (x < 15) {
-    x = x + 1;
-}`;
+// While loop
+int counter = 0;
+while (counter < 5) {
+    counter = counter + 1;
+}
+
+// For loop
+for (int i = 0; i < 10; i = i + 1) {
+    print(i);
+}
+
+// Return statement
+return sum;`;
     
     document.getElementById('sourceCode').value = example;
 }
