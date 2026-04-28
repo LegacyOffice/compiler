@@ -310,14 +310,16 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #04AA6D;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
             color: white;
             padding: 15px 25px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 20px rgba(255, 107, 53, 0.5);
             font-weight: 600;
+            font-size: 16px;
             z-index: 1000;
-            animation: slideIn 0.3s ease-out;
+            animation: slideIn 0.3s ease-out, pulse 0.5s ease-in-out 2;
+            border: 2px solid #FFD700;
         }
 
         @keyframes slideIn {
@@ -328,6 +330,15 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
             }
         }
 
