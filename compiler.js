@@ -765,6 +765,9 @@ function compile() {
 
     // Update statistics
     updateStats(tokens, source, allErrors, symbolTable);
+
+    // Show notification
+    showNotification('✓ Compilation Complete! Check the results below.');
 }
 
 function displayTokens(tokens) {
@@ -932,4 +935,24 @@ for (int i = 0; i < 10; i = i + 1) {
 return sum;`;
     
     document.getElementById('sourceCode').value = example;
+}
+
+function showNotification(message) {
+    // Remove existing notification if any
+    const existing = document.querySelector('.notification');
+    if (existing) {
+        existing.remove();
+    }
+
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+        notification.classList.add('hide');
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
 }
