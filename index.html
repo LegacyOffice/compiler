@@ -63,14 +63,17 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            transition: all 0.3s ease;
         }
 
         .section.expanded {
             grid-column: 1 / -1;
+            z-index: 1;
         }
 
         .section.expanded .output-box {
-            max-height: 800px;
+            max-height: 1000px;
+            min-height: 400px;
         }
 
         .expand-btn {
@@ -178,11 +181,10 @@
             padding: 15px;
             min-height: 200px;
             max-height: 400px;
-            overflow-y: auto;
+            overflow: auto;
             font-family: 'Courier New', monospace;
             font-size: 13px;
             resize: vertical;
-            overflow: auto;
         }
 
         .token {
@@ -232,9 +234,11 @@
         }
 
         .ast-node {
-            margin-left: 20px;
-            padding: 5px;
+            margin-left: 0;
+            padding: 5px 0;
             border-left: 2px solid #04AA6D;
+            padding-left: 10px;
+            margin-bottom: 3px;
         }
 
         .symbol-table {
@@ -486,6 +490,7 @@ if (sum > 25) {
                     <button class="btn-primary" onclick="compile()">▶ Compile</button>
                     <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
                     <button class="btn-secondary" onclick="loadExample()">⊕ Load Example</button>
+                    <button class="btn-secondary" onclick="exportResults()">⬇ Export Results</button>
                 </div>
                 <div class="example-code">
                     <strong>Supported Syntax:</strong><br>
@@ -570,13 +575,28 @@ if (sum > 25) {
         function toggleExpand(sectionId) {
             const section = document.getElementById(sectionId);
             const btn = section.querySelector('.expand-btn');
+            const outputBox = section.querySelector('.output-box');
             
             if (section.classList.contains('expanded')) {
                 section.classList.remove('expanded');
                 btn.textContent = '⇕ Expand';
             } else {
+                // Collapse all other sections first
+                document.querySelectorAll('.section.expanded').forEach(s => {
+                    if (s.id !== sectionId) {
+                        s.classList.remove('expanded');
+                        const otherBtn = s.querySelector('.expand-btn');
+                        if (otherBtn) otherBtn.textContent = '⇕ Expand';
+                    }
+                });
+                
                 section.classList.add('expanded');
                 btn.textContent = '⇕ Collapse';
+                
+                // Scroll to section
+                setTimeout(() => {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
             }
         }
     </script>

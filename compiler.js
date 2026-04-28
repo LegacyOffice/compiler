@@ -570,6 +570,10 @@ class Parser {
             this.advance();
             return new ASTNode('StringLiteral', token.value);
         }
+        else if (token.type === 'KEYWORD' && (token.value === 'true' || token.value === 'false')) {
+            this.advance();
+            return new ASTNode('BooleanLiteral', token.value);
+        }
         else if (token.type === 'IDENTIFIER') {
             this.advance();
             return new ASTNode('Identifier', token.value);
@@ -778,29 +782,101 @@ function displayTokens(tokens) {
         return;
     }
 
-    let html = '<div style="line-height: 2;">';
+    // Count tokens by type
+    const tokenCounts = {};
+    const tokensByType = {};
+    
     tokens.forEach(token => {
-        const className = getTokenClass(token.type);
-        html += `<span class="token ${className}" title="Line ${token.line}, Col ${token.column}">
-            ${token.type}: ${escapeHtml(token.value)}
-        </span>`;
+        tokenCounts[token.type] = (tokenCounts[token.type] || 0) + 1;
+        if (!tokensByType[token.type]) {
+            tokensByType[token.type] = [];
+        }
+        tokensByType[token.type].push(token);
+    });
+
+    // Display token statistics
+    let html = '<div style="margin-bottom: 15px; padding: 10px; background: #E7E9EB; border-radius: 6px;">';
+    html += '<strong>Token Statistics:</strong><br>';
+    Object.entries(tokenCounts).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+        html += `<span style="margin-right: 15px;">${type}: <strong>${count}</strong></span>`;
     });
     html += '</div>';
+
+    // Display grouped tokens
+    html += '<div style="margin-bottom: 20px;"><strong>Grouped by Type:</strong></div>';
+    
+    Object.entries(tokensByType).forEach(([type, typeTokens]) => {
+        html += `<div style="margin-bottom: 15px;">`;
+        html += `<div style="font-weight: 600; margin-bottom: 5px; color: #04AA6D;">${type} (${typeTokens.length}):</div>`;
+        html += '<div style="line-height: 2;">';
+        typeTokens.forEach(token => {
+            const className = getTokenClass(token.type);
+            html += `<span class="token ${className}" title="Line ${token.line}, Col ${token.column}">
+                ${escapeHtml(token.value)}
+            </span>`;
+        });
+        html += '</div></div>';
+    });
+    
     output.innerHTML = html;
 }
 
 function displayAST(ast, indent = 0) {
     const output = document.getElementById('parserOutput');
-    output.innerHTML = renderAST(ast, 0);
+    
+    // Calculate AST statistics
+    const stats = calculateASTStats(ast);
+    
+    let html = '<div style="margin-bottom: 15px; padding: 10px; background: #E7E9EB; border-radius: 6px;">';
+    html += '<strong>AST Statistics:</strong><br>';
+    html += `<span style="margin-right: 15px;">Total Nodes: <strong>${stats.totalNodes}</strong></span>`;
+    html += `<span style="margin-right: 15px;">Max Depth: <strong>${stats.maxDepth}</strong></span>`;
+    html += `<span>Statements: <strong>${stats.statements}</strong></span>`;
+    html += '</div>';
+    
+    html += '<div style="font-family: monospace; font-size: 13px;">';
+    html += renderAST(ast, 0);
+    html += '</div>';
+    
+    output.innerHTML = html;
+}
+
+function calculateASTStats(node, depth = 0) {
+    if (!node) return { totalNodes: 0, maxDepth: 0, statements: 0 };
+    
+    let stats = {
+        totalNodes: 1,
+        maxDepth: depth,
+        statements: ['Declaration', 'Assignment', 'IfStatement', 'WhileStatement', 'ForStatement', 'PrintStatement', 'ReturnStatement'].includes(node.type) ? 1 : 0
+    };
+    
+    if (node.children) {
+        node.children.forEach(child => {
+            const childStats = calculateASTStats(child, depth + 1);
+            stats.totalNodes += childStats.totalNodes;
+            stats.maxDepth = Math.max(stats.maxDepth, childStats.maxDepth);
+            stats.statements += childStats.statements;
+        });
+    }
+    
+    return stats;
 }
 
 function renderAST(node, indent) {
     if (!node) return '';
     
-    let html = '<div class="ast-node">';
-    html += `<strong>${node.type}</strong>`;
+    const indentStr = '  '.repeat(indent);
+    let html = '<div class="ast-node" style="margin-left: ' + (indent * 20) + 'px;">';
+    
+    // Color code different node types
+    let nodeColor = '#000000';
+    if (['Declaration', 'Assignment'].includes(node.type)) nodeColor = '#04AA6D';
+    else if (['IfStatement', 'WhileStatement', 'ForStatement'].includes(node.type)) nodeColor = '#2563EB';
+    else if (['BinaryOp', 'Identifier', 'Literal'].includes(node.type)) nodeColor = '#F57C00';
+    
+    html += `<strong style="color: ${nodeColor};">${node.type}</strong>`;
     if (node.value) {
-        html += `: <code>${escapeHtml(node.value)}</code>`;
+        html += `: <code style="background: #FFF4A3; padding: 2px 6px; border-radius: 3px;">${escapeHtml(node.value)}</code>`;
     }
     
     if (node.children && node.children.length > 0) {
@@ -821,11 +897,29 @@ function displaySymbolTable(symbolTable) {
         return;
     }
 
-    let html = '<table class="symbol-table">';
+    // Calculate statistics
+    let unusedVars = 0;
+    let uninitializedVars = 0;
+    
+    symbolTable.forEach((info) => {
+        if (!info.used) unusedVars++;
+        if (!info.initialized) uninitializedVars++;
+    });
+
+    // Display statistics
+    let html = '<div style="margin-bottom: 15px; padding: 10px; background: #E7E9EB; border-radius: 6px;">';
+    html += '<strong>Symbol Table Statistics:</strong><br>';
+    html += `<span style="margin-right: 15px;">Total Variables: <strong>${symbolTable.size}</strong></span>`;
+    html += `<span style="margin-right: 15px;">Unused: <strong style="color: #F57C00;">${unusedVars}</strong></span>`;
+    html += `<span>Uninitialized: <strong style="color: #F57C00;">${uninitializedVars}</strong></span>`;
+    html += '</div>';
+
+    html += '<table class="symbol-table">';
     html += '<tr><th>Name</th><th>Type</th><th>Initialized</th><th>Used</th></tr>';
     
     symbolTable.forEach((info, name) => {
-        html += `<tr>
+        const unusedStyle = !info.used ? 'background: #FFFFCC;' : '';
+        html += `<tr style="${unusedStyle}">
             <td><code>${escapeHtml(name)}</code></td>
             <td>${info.type}</td>
             <td>${info.initialized ? '✅' : '❌'}</td>
@@ -869,6 +963,42 @@ function updateStats(tokens, source, errors, symbolTable) {
     document.getElementById('lineCount').textContent = source.split('\n').length;
     document.getElementById('errorCount').textContent = errors.length;
     document.getElementById('symbolCount').textContent = symbolTable.size;
+
+    // Calculate code complexity
+    const complexity = calculateComplexity(source);
+    
+    // Add complexity indicator to stats if needed
+    const statsDiv = document.getElementById('stats');
+    let complexityCard = document.getElementById('complexityCard');
+    
+    if (!complexityCard) {
+        complexityCard = document.createElement('div');
+        complexityCard.id = 'complexityCard';
+        complexityCard.className = 'stat-card';
+        statsDiv.appendChild(complexityCard);
+    }
+    
+    const complexityColor = complexity <= 5 ? '#04AA6D' : complexity <= 10 ? '#F57C00' : '#F44336';
+    complexityCard.innerHTML = `
+        <div class="stat-value" style="color: ${complexityColor}">${complexity}</div>
+        <div class="stat-label">Complexity</div>
+    `;
+}
+
+function calculateComplexity(source) {
+    // Simple cyclomatic complexity: count decision points
+    let complexity = 1; // Base complexity
+    
+    const keywords = ['if', 'else', 'while', 'for', '&&', '||'];
+    keywords.forEach(keyword => {
+        const regex = new RegExp('\\b' + keyword + '\\b', 'g');
+        const matches = source.match(regex);
+        if (matches) {
+            complexity += matches.length;
+        }
+    });
+    
+    return complexity;
 }
 
 function getTokenClass(type) {
@@ -955,4 +1085,79 @@ function showNotification(message) {
         notification.classList.add('hide');
         setTimeout(() => notification.remove(), 300);
     }, 4000);
+}
+
+function exportResults() {
+    const source = document.getElementById('sourceCode').value;
+    
+    if (!source.trim()) {
+        alert('Please compile some code first!');
+        return;
+    }
+    
+    // Get all output content
+    const lexerOutput = document.getElementById('lexerOutput').innerText;
+    const parserOutput = document.getElementById('parserOutput').innerText;
+    const symbolTableOutput = document.getElementById('symbolTableOutput').innerText;
+    const errorsOutput = document.getElementById('errorsOutput').innerText;
+    const stats = {
+        tokens: document.getElementById('tokenCount').textContent,
+        lines: document.getElementById('lineCount').textContent,
+        errors: document.getElementById('errorCount').textContent,
+        symbols: document.getElementById('symbolCount').textContent
+    };
+    
+    // Create export content
+    const exportContent = `COMPILER FRONTEND - COMPILATION RESULTS
+${'='.repeat(60)}
+
+SOURCE CODE:
+${'-'.repeat(60)}
+${source}
+
+${'='.repeat(60)}
+STATISTICS:
+${'-'.repeat(60)}
+Tokens: ${stats.tokens}
+Lines: ${stats.lines}
+Errors: ${stats.errors}
+Symbols: ${stats.symbols}
+
+${'='.repeat(60)}
+LEXICAL ANALYSIS (TOKENS):
+${'-'.repeat(60)}
+${lexerOutput}
+
+${'='.repeat(60)}
+SYNTAX ANALYSIS (AST):
+${'-'.repeat(60)}
+${parserOutput}
+
+${'='.repeat(60)}
+SEMANTIC ANALYSIS (SYMBOL TABLE):
+${'-'.repeat(60)}
+${symbolTableOutput}
+
+${'='.repeat(60)}
+ERRORS & WARNINGS:
+${'-'.repeat(60)}
+${errorsOutput}
+
+${'='.repeat(60)}
+Generated by Compiler Frontend
+Date: ${new Date().toLocaleString()}
+`;
+    
+    // Create download
+    const blob = new Blob([exportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `compilation-results-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('✓ Results exported successfully!');
 }
