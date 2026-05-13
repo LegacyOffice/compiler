@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Web-based Compiler Frontend with Lexical, Syntax, and Semantic Analysis">
+    <title>Compiler Frontend - Lexer, Parser & Semantic Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #04AA6D 0%, #808b87 100%);
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #04AA6D 0%, #059862 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .input-section {
+            grid-column: 1 / -1;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .section.expanded {
+            grid-column: 1 / -1;
+            z-index: 1;
+        }
+
+        .section.expanded .output-box {
+            max-height: 1000px;
+            min-height: 400px;
+        }
+
+        .expand-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #04AA6D;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .expand-btn:hover {
+            background: #059862;
+        }
+
+        .section h2 {
+            color: #000000;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .section-icon {
+            width: 28px;
+            height: 28px;
+            background: #04AA6D;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            background: white;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #04AA6D;
+            box-shadow: 0 0 0 3px rgba(4, 170, 109, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn-primary {
+            background: #04AA6D;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059862;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(4, 170, 109, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .output-box {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .token {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 4px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .token-keyword { background: #FFF4A3; color: #000000; border: 1px solid #FFD700; }
+        .token-identifier { background: #E7E9EB; color: #000000; border: 1px solid #D4D4D4; }
+        .token-number { background: #FFE6E6; color: #D32F2F; border: 1px solid #FF9999; }
+        .token-operator { background: #D4EDDA; color: #155724; border: 1px solid #A3D9A5; }
+        .token-punctuation { background: #F8F9FA; color: #495057; border: 1px solid #DEE2E6; }
+        .token-string { background: #CCE5FF; color: #004085; border: 1px solid #99CCFF; }
+
+        .error {
+            background: #FFDDDD;
+            border-left: 4px solid #F44336;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .success {
+            background: #DDFFDD;
+            border-left: 4px solid #04AA6D;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            color: #046C4E;
+            font-weight: 500;
+        }
+
+        .warning {
+            background: #FFFFCC;
+            border-left: 4px solid #FFC107;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            color: #F57C00;
+            font-weight: 500;
+        }
+
+        .ast-node {
+            margin-left: 0;
+            padding: 5px 0;
+            border-left: 2px solid #04AA6D;
+            padding-left: 10px;
+            margin-bottom: 3px;
+        }
+
+        .symbol-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .symbol-table th,
+        .symbol-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .symbol-table th {
+            background: #04AA6D;
+            color: white;
+            font-weight: 600;
+        }
+
+        .symbol-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .example-code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #04AA6D;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 20px rgba(255, 107, 53, 0.5);
+            font-weight: 600;
+            font-size: 16px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out, pulse 0.5s ease-in-out 2;
+            border: 2px solid #FFD700;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .notification.hide {
+            animation: slideOut 0.3s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.85em;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .section {
+                padding: 15px;
+                padding-top: 50px;
+            }
+
+            .section h2 {
+                font-size: 1em;
+                flex-wrap: wrap;
+                margin-bottom: 10px;
+            }
+
+            .section-icon {
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
+            }
+
+            .expand-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                left: auto;
+                width: auto;
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+
+            textarea {
+                min-height: 150px;
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .output-box {
+                min-height: 150px;
+                max-height: 300px;
+                font-size: 11px;
+                padding: 10px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .section.expanded {
+                padding-top: 50px;
+            }
+
+            .section.expanded .output-box {
+                max-height: 600px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 10px;
+            }
+
+            .stat-value {
+                font-size: 1.3em;
+            }
+
+            .stat-label {
+                font-size: 0.75em;
+            }
+
+            .token {
+                font-size: 10px;
+                padding: 3px 5px;
+                margin: 2px;
+                word-break: break-word;
+            }
+
+            .example-code {
+                font-size: 10px;
+                padding: 8px;
+            }
+
+            .error, .success, .warning {
+                padding: 8px;
+                font-size: 12px;
+                word-wrap: break-word;
+            }
+
+            .symbol-table {
+                font-size: 11px;
+                display: block;
+                overflow-x: auto;
+            }
+
+            .symbol-table th,
+            .symbol-table td {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            .ast-node {
+                font-size: 11px;
+                padding: 3px 0;
+                padding-left: 8px;
+                word-wrap: break-word;
+            }
+
+            /* Improve touch targets */
+            button, .expand-btn {
+                min-height: 44px;
+            }
+
+            /* Better spacing for mobile */
+            .section h2 {
+                padding-right: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .header p {
+                font-size: 0.75em;
+            }
+
+            .main-content {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .section {
+                padding: 10px;
+                padding-top: 45px;
+            }
+
+            .section h2 {
+                font-size: 0.9em;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 5px;
+            }
+
+            .stat-card {
+                padding: 8px;
+            }
+
+            .stat-value {
+                font-size: 1.1em;
+            }
+
+            .stat-label {
+                font-size: 0.7em;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .output-box {
+                font-size: 10px;
+                padding: 8px;
+            }
+
+            .token {
+                font-size: 9px;
+                padding: 2px 4px;
+                margin: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙ Compiler Frontend</h1>
+            <p>Lexical Analysis • Syntax Analysis • Semantic Analysis</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="input-section section">
+                <h2>
+                    <span class="section-icon">&lt;/&gt;</span>
+                    Source Code Input
+                </h2>
+                <textarea id="sourceCode" placeholder="Enter your code here...
+Example:
+int x = 10;
+int y = 20;
+int sum = x + y;
+if (sum > 25) {
+    print(sum);
+}"></textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="compile()">▶ Compile</button>
+                    <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
+                    <button class="btn-secondary" onclick="loadExample()">⊕ Load Example</button>
+                    <button class="btn-secondary" onclick="exportResults()">⬇ Export Results</button>
+                </div>
+                <div class="example-code">
+                    <strong>Supported Syntax:</strong><br>
+                    • Variables: int, float, string<br>
+                    • Operators: +, -, *, /, =, ==, !=, &lt;, &gt;, &lt;=, &gt;=<br>
+                    • Keywords: if, else, while, for, print, return<br>
+                    • Statements: assignment, conditionals, loops
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="input-section section">
+                <h2>
+                    <span class="section-icon">≡</span>
+                    Compilation Statistics
+                </h2>
+                <div class="stats" id="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="tokenCount">0</div>
+                        <div class="stat-label">Tokens</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="lineCount">0</div>
+                        <div class="stat-label">Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="errorCount">0</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="symbolCount">0</div>
+                        <div class="stat-label">Symbols</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lexer Output -->
+            <div class="section" id="lexerSection">
+                <button class="expand-btn" onclick="toggleExpand('lexerSection')">⇕ Expand</button>
+                <h2>
+                    <span class="section-icon">①</span>
+                    Lexical Analysis (Tokens)
+                </h2>
+                <div class="output-box" id="lexerOutput"></div>
+            </div>
+
+            <!-- Parser Output -->
+            <div class="section" id="parserSection">
+                <button class="expand-btn" onclick="toggleExpand('parserSection')">⇕ Expand</button>
+                <h2>
+                    <span class="section-icon">②</span>
+                    Syntax Analysis (AST)
+                </h2>
+                <div class="output-box" id="parserOutput"></div>
+            </div>
+
+            <!-- Symbol Table -->
+            <div class="section" id="symbolSection">
+                <button class="expand-btn" onclick="toggleExpand('symbolSection')">⇕ Expand</button>
+                <h2>
+                    <span class="section-icon">③</span>
+                    Semantic Analysis (Symbol Table)
+                </h2>
+                <div class="output-box" id="symbolTableOutput"></div>
+            </div>
+
+
+            <!-- Bottom-Up Parser Output -->
+<div class="section" id="parserSRSection">
+    <button class="expand-btn" onclick="toggleExpand('parserSRSection')">⇕ Expand</button>
+    <h2><span class="section-icon">②</span> Bottom-Up Parser (Shift-Reduce)</h2>
+    <div class="output-box" id="parserOutputSR"></div>
+    <div style="margin-top:10px;font-weight:600;font-size:13px;color:#04AA6D;">Shift/Reduce Steps:</div>
+    <div class="output-box" id="srReductionsOutput" style="margin-top:6px;max-height:200px;"></div>
+</div>
+
+<!-- IR / 3AC Output -->
+<div class="section" id="irSection">
+    <button class="expand-btn" onclick="toggleExpand('irSection')">⇕ Expand</button>
+    <h2><span class="section-icon">④</span> Intermediate Representation (3AC)</h2>
+    <div class="output-box" id="irOutput"></div>
+</div>
+
+<!-- Optimizations -->
+<div class="section" id="optimizationsSection">
+    <button class="expand-btn" onclick="toggleExpand('optimizationsSection')">⇕ Expand</button>
+    <h2><span class="section-icon">⚡</span> Code Optimizations</h2>
+    <div class="output-box" id="optimizationsOutput"></div>
+</div>
+     
+
+            <!-- Errors -->
+            <div class="section" id="errorsSection">
+                <button class="expand-btn" onclick="toggleExpand('errorsSection')">⇕ Expand</button>
+                <h2>
+                    <span class="section-icon">!</span>
+                    Errors & Warnings
+                </h2>
+                <div class="output-box" id="errorsOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleExpand(sectionId) {
+            const section = document.getElementById(sectionId);
+            const btn = section.querySelector('.expand-btn');
+            const outputBox = section.querySelector('.output-box');
+            
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                btn.textContent = '⇕ Expand';
+            } else {
+                // Collapse all other sections first
+                document.querySelectorAll('.section.expanded').forEach(s => {
+                    if (s.id !== sectionId) {
+                        s.classList.remove('expanded');
+                        const otherBtn = s.querySelector('.expand-btn');
+                        if (otherBtn) otherBtn.textContent = '⇕ Expand';
+                    }
+                });
+                
+                section.classList.add('expanded');
+                btn.textContent = '⇕ Collapse';
+                
+                // Scroll to section
+                setTimeout(() => {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        }
+    </script>
+    <script src="compiler.js?t=2"></script>
+    <script src="advanced-features.js?t=2"></script>
+</body>
+</html>
